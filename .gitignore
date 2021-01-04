@@ -1,9 +1,12 @@
 *.o
-omxplayer.log
-omxplayer.old.log
-omxplayer.bin
-ffmpeg_compiled
-ffmpeg
+MAN
 help.h
 keys.h
+omxplayer-dist
+omxplayer-dist.tgz
+omxplayer.1
+omxplayer.bin
+omxplayer.log
+omxplayer.old.log
 patch.flag
+version.h
