@@ -58,33 +58,33 @@ public:
 
   bool GetVisible() BOOST_NOEXCEPT
   {
-    assert(m_open);
-    return m_visible;
+    // assert(m_open);
+    return m_open ? m_visible : false;
   }
   
   void SetActiveStream(size_t index) BOOST_NOEXCEPT;
 
   size_t GetActiveStream() BOOST_NOEXCEPT
   {
-    assert(m_open);
-    assert(!m_subtitle_buffers.empty());
-    return m_active_index;
+    // assert(m_open);
+    // assert(!m_subtitle_buffers.empty());
+    return m_open ? m_active_index : 0;
   }
 
   void SetDelay(int value) BOOST_NOEXCEPT;
 
   int GetDelay() BOOST_NOEXCEPT
   {
-    assert(m_open);
-    return m_delay;
+    // assert(m_open);
+    return m_open ? m_delay : 0;
   }
 
   void SetUseExternalSubtitles(bool use) BOOST_NOEXCEPT;
 
   bool GetUseExternalSubtitles() BOOST_NOEXCEPT
   {
-    assert(m_open);
-    return m_use_external_subtitles;
+    // assert(m_open);
+    return m_open ? m_use_external_subtitles : false;
   }
 
   void DisplayText(const std::string& text, int duration) BOOST_NOEXCEPT;
