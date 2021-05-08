@@ -177,19 +177,9 @@ int COMXAudioCodecOMX::Decode(BYTE* pData, int iSize, double dts, double pts)
   m_dllAvCodec.av_init_packet(&avpkt);
   avpkt.data = pData;
   avpkt.size = iSize;
-  iBytesUsed = m_dllAvCodec.avcodec_decode_audio4( m_pCodecContext
-                                                 , m_pFrame1
-                                                 , &got_frame
-                                                 , &avpkt);
-  if (iBytesUsed < 0 || !got_frame)
-  {
+  iBytesUsed = m_dllAvCodec.avcodec_decode_audio4(m_pCodecContext, m_pFrame1, &got_frame, &avpkt);
+  if (iBytesUsed < 0 || !got_frame) {
     return iBytesUsed;
-  }
-  /* some codecs will attempt to consume more data than what we gave */
-  if (iBytesUsed > iSize)
-  {
-    CLog::Log(LOGWARNING, "COMXAudioCodecOMX::Decode - decoder attempted to consume more data than given");
-    iBytesUsed = iSize;
   }
   m_bGotFrame = true;
 
@@ -201,7 +191,7 @@ int COMXAudioCodecOMX::Decode(BYTE* pData, int iSize, double dts, double pts)
              m_pFrame1->data[0], m_pFrame1->data[1], m_pFrame1->data[2], m_pFrame1->data[3], m_pFrame1->data[4], m_pFrame1->data[5], m_pFrame1->data[6], m_pFrame1->data[7]
              );
   }
-  return iBytesUsed;
+  return iSize;
 }
 
 int COMXAudioCodecOMX::GetData(BYTE** dst, double &dts, double &pts)
