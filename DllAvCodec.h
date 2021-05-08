@@ -42,24 +42,20 @@ extern "C" {
 #pragma warning(disable:4244)
 #endif
 
-#if (defined USE_EXTERNAL_FFMPEG)
-  #if (defined HAVE_LIBAVCODEC_AVCODEC_H)
-    #include <libavcodec/avcodec.h>
-    #if (defined HAVE_LIBAVCODEC_OPT_H)
-      #include <libavcodec/opt.h>
-    #endif
-    #if (defined AVPACKET_IN_AVFORMAT)
-      #include <libavformat/avformat.h>
-    #endif
-  #elif (defined HAVE_FFMPEG_AVCODEC_H)
-    #include <ffmpeg/avcodec.h>
-    #include <ffmpeg/opt.h>
-    #if (defined AVPACKET_IN_AVFORMAT)
-      #include <ffmpeg/avformat.h>
-    #endif
+#if (defined HAVE_LIBAVCODEC_AVCODEC_H)
+  #include <libavcodec/avcodec.h>
+  #if (defined HAVE_LIBAVCODEC_OPT_H)
+    #include <libavcodec/opt.h>
   #endif
-#else
-  #include "libavcodec/avcodec.h"
+  #if (defined AVPACKET_IN_AVFORMAT)
+    #include <libavformat/avformat.h>
+  #endif
+#elif (defined HAVE_FFMPEG_AVCODEC_H)
+  #include <ffmpeg/avcodec.h>
+  #include <ffmpeg/opt.h>
+  #if (defined AVPACKET_IN_AVFORMAT)
+    #include <ffmpeg/avformat.h>
+  #endif
 #endif
 }
 
@@ -88,8 +84,6 @@ public:
   virtual int avcodec_default_get_buffer2(AVCodecContext *s, AVFrame *pic, int flags)=0;
   virtual void av_init_packet(AVPacket *pkt)=0;
 };
-
-#if (defined USE_EXTERNAL_FFMPEG) || (defined TARGET_DARWIN)
 
 // Use direct layer
 class DllAvCodec : public DllDynamic, DllAvCodecInterface
@@ -163,68 +157,3 @@ public:
   }
   virtual void Unload() {}
 };
-#else
-class DllAvCodec : public DllDynamic, DllAvCodecInterface
-{
-  DECLARE_DLL_WRAPPER(DllAvCodec, DLL_PATH_LIBAVCODEC)
-  DEFINE_FUNC_ALIGNED1(void, __cdecl, avcodec_flush_buffers, AVCodecContext*)
-  DEFINE_FUNC_ALIGNED3(int, __cdecl, avcodec_open2_dont_call, AVCodecContext*, AVCodec *, AVDictionary **)
-  DEFINE_FUNC_ALIGNED2(int, __cdecl, avcodec_send_packet, AVCodecContext*, AVPacket*)
-  DEFINE_FUNC_ALIGNED2(int, __cdecl, avcodec_receive_frame, AVCodecContext*, AVFrame*)
-  DEFINE_FUNC_ALIGNED4(int, __cdecl, avcodec_decode_subtitle2, AVCodecContext*, AVSubtitle*, int*, AVPacket*)
-  DEFINE_FUNC_ALIGNED1(AVCodecContext*, __cdecl, avcodec_alloc_context3, AVCodec *)
-  DEFINE_FUNC_ALIGNED1(AVCodecParserContext*, __cdecl, av_parser_init, int)
-  DEFINE_FUNC_ALIGNED9(int, __cdecl, av_parser_parse2, AVCodecParserContext*,AVCodecContext*, uint8_t**, int*, const uint8_t*, int, int64_t, int64_t, int64_t)
-  DEFINE_METHOD1(void, av_init_packet, (AVPacket *p1))
-
-  LOAD_SYMBOLS();
-
-  DEFINE_METHOD1(AVCodec*, avcodec_find_decoder, (enum AVCodecID p1))
-  DEFINE_METHOD1(int, avcodec_close_dont_call, (AVCodecContext *p1))
-  DEFINE_METHOD0(AVFrame*, av_frame_alloc)
-  DEFINE_METHOD4(void, avcodec_string, (char *p1, int p2, AVCodecContext *p3, int p4))
-  DEFINE_METHOD1(void, av_parser_close, (AVCodecParserContext *p1))
-  DEFINE_METHOD1(void, av_packet_unref, (AVPacket *p1))
-  DEFINE_METHOD2(int, avcodec_default_get_buffer2, (AVCodecContext *p1, AVFrame *p2, int flags))
-  DEFINE_METHOD2(enum AVPixelFormat, avcodec_default_get_format, (struct AVCodecContext *p1, const enum AVPixelFormat *p2))
-
-  BEGIN_METHOD_RESOLVE()
-    RESOLVE_METHOD(avcodec_flush_buffers)
-    RESOLVE_METHOD_RENAME(avcodec_open2,avcodec_open2_dont_call)
-    RESOLVE_METHOD_RENAME(avcodec_close,avcodec_close_dont_call)
-    RESOLVE_METHOD(avcodec_find_decoder)
-    RESOLVE_METHOD(av_frame_alloc)
-    RESOLVE_METHOD(avcodec_decode_subtitle2)
-    RESOLVE_METHOD(avcodec_alloc_context3)
-    RESOLVE_METHOD(avcodec_string)
-    RESOLVE_METHOD(av_parser_init)
-    RESOLVE_METHOD(av_parser_parse2)
-    RESOLVE_METHOD(av_parser_close)
-    RESOLVE_METHOD(av_packet_unref)
-    RESOLVE_METHOD(avcodec_default_get_buffer2)
-    RESOLVE_METHOD(avcodec_default_get_format)
-    RESOLVE_METHOD(av_init_packet)
-  END_METHOD_RESOLVE()
-
-  /* dependencies of libavcodec */
-  DllAvUtil m_dllAvUtil;
-  // DllAvUtil loaded implicitely by m_dllAvCore
-
-public:
-    int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options)
-    {
-      return avcodec_open2_dont_call(avctx,codec,options);
-    }
-    int avcodec_close(AVCodecContext *avctx)
-    {
-      return avcodec_close_dont_call(avctx);
-    }
-    virtual bool Load()
-    {
-      if (!m_dllAvUtil.Load())
-	return false;
-      return DllDynamic::Load();
-    }
-};
-
-#endif

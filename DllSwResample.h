@@ -36,19 +36,15 @@ extern "C" {
 #ifndef __GNUC__
 #pragma warning(disable:4244)
 #endif
-#if (defined USE_EXTERNAL_FFMPEG)
-  #if HAVE_LIBSWRESAMPLE_SWRESAMPLE_H
-    #include <libswresample/swresample.h>
-  #elif HAVE_LIBAVRESAMPLE_AVRESAMPLE_H
-    #include <libavresample/avresample.h>
-    #include <libavutil/opt.h>
-    #include <libavutil/samplefmt.h>
-    #define SwrContext AVAudioResampleContext
-  #else
-    #error "Either libswresample or libavresample is needed!"
-  #endif
+#if HAVE_LIBSWRESAMPLE_SWRESAMPLE_H
+  #include <libswresample/swresample.h>
+#elif HAVE_LIBAVRESAMPLE_AVRESAMPLE_H
+  #include <libavresample/avresample.h>
+  #include <libavutil/opt.h>
+  #include <libavutil/samplefmt.h>
+  #define SwrContext AVAudioResampleContext
 #else
-  #include "libswresample/swresample.h"
+  #error "Either libswresample or libavresample is needed!"
 #endif
 }
 
@@ -62,7 +58,6 @@ public:
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count)=0;
 };
 
-#if (defined USE_EXTERNAL_FFMPEG) || (defined TARGET_DARWIN) 
 
 #if HAVE_LIBSWRESAMPLE_SWRESAMPLE_H || (defined TARGET_DARWIN)
 // Use direct mapping
@@ -111,39 +106,4 @@ public:
   virtual void swr_free(struct SwrContext **s){ ::avresample_close(*s); *s = NULL; }
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count){ return ::avresample_convert(s, (void**)out, 0, out_count, (void**)in, 0,in_count); }
 };
-#endif
-
-#else
-
-class DllSwResample : public DllDynamic, DllSwResampleInterface
-{
-  DECLARE_DLL_WRAPPER(DllSwResample, DLL_PATH_LIBSWRESAMPLE)
-
-  LOAD_SYMBOLS()
-
-  DEFINE_METHOD9(SwrContext*, swr_alloc_set_opts, (struct SwrContext *p1, int64_t p2, enum AVSampleFormat p3, int p4, int64_t p5, enum AVSampleFormat p6, int p7, int p8, void * p9));
-  DEFINE_METHOD1(int, swr_init, (struct SwrContext *p1))
-  DEFINE_METHOD1(void, swr_free, (struct SwrContext **p1))
-  DEFINE_METHOD5(int, swr_convert, (struct SwrContext *p1, uint8_t **p2, int p3, const uint8_t **p4, int p5))
-
-  BEGIN_METHOD_RESOLVE()
-    RESOLVE_METHOD(swr_alloc_set_opts)
-    RESOLVE_METHOD(swr_init)
-    RESOLVE_METHOD(swr_free)
-    RESOLVE_METHOD(swr_convert)
-  END_METHOD_RESOLVE()
-
-  /* dependencies of libavformat */
-  DllAvUtil m_dllAvUtil;
-
-public:
-
-  virtual bool Load()
-  {
-    if (!m_dllAvUtil.Load())
-      return false;
-    return DllDynamic::Load();
-  }
-};
-
 #endif
