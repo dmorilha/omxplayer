@@ -96,8 +96,6 @@ bool OMXPlayerAudio::Open(OMXClock *av_clock, const OMXAudioConfig &config, OMXR
 
   if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load() || !m_dllAvFormat.Load() || !av_clock)
     return false;
-  
-  m_dllAvFormat.av_register_all();
 
   m_config      = config;
   m_av_clock    = av_clock;

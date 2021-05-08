@@ -59,17 +59,14 @@ COMXAudioCodecOMX::~COMXAudioCodecOMX()
   Dispose();
 }
 
-bool COMXAudioCodecOMX::Open(COMXStreamInfo &hints, enum PCMLayout layout)
+bool COMXAudioCodecOMX::Open(const COMXStreamInfo &hints, enum PCMLayout layout)
 {
-  AVCodec* pCodec;
   m_bOpenedCodec = false;
 
   if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load() || !m_dllSwResample.Load())
     return false;
 
-  m_dllAvCodec.avcodec_register_all();
-
-  pCodec = m_dllAvCodec.avcodec_find_decoder(hints.codec);
+  const AVCodec* pCodec = m_dllAvCodec.avcodec_find_decoder(hints.codec);
   if (!pCodec)
   {
     CLog::Log(LOGDEBUG,"COMXAudioCodecOMX::Open() Unable to find codec %d", hints.codec);
@@ -95,16 +92,21 @@ bool COMXAudioCodecOMX::Open(COMXStreamInfo &hints, enum PCMLayout layout)
   {
     if (layout == PCM_LAYOUT_2_0)
     {
+      printf(" -> PCM LAYOUT 2.0\n");
       m_pCodecContext->request_channel_layout = AV_CH_LAYOUT_STEREO;
       m_pCodecContext->channels = 2;
       m_pCodecContext->channel_layout = m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels);
     }
     else if (layout <= PCM_LAYOUT_5_1)
     {
+      printf(" -> PCM LAYOUT 5.1\n");
       m_pCodecContext->request_channel_layout = AV_CH_LAYOUT_5POINT1;
       m_pCodecContext->channels = 6;
       m_pCodecContext->channel_layout = m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels);
+    } else {
+      printf(" -> (SOMETHING ELSE)\n");
     }
+
   }
   if (m_pCodecContext->request_channel_layout)
     CLog::Log(LOGNOTICE,"COMXAudioCodecOMX::Open() Requesting channel layout of %x", (unsigned)m_pCodecContext->request_channel_layout);
