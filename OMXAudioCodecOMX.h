@@ -37,7 +37,7 @@ public:
   ~COMXAudioCodecOMX();
   bool Open(const COMXStreamInfo &hints, enum PCMLayout layout);
   void Dispose();
-  int Decode(BYTE* pData, int iSize, double dts, double pts);
+  int Decode(const BYTE * const pData, const int iSize, const double dts, const double pts);
   int GetData(BYTE** dst, double &dts, double &pts);
   void Reset();
   int GetChannels();

@@ -79,10 +79,10 @@ public:
                     const uint8_t *buf, int buf_size,
                     int64_t pts, int64_t dts, int64_t pos)=0;
   virtual void av_parser_close(AVCodecParserContext *s)=0;
+  virtual void av_init_packet(AVPacket *pkt)=0;
   virtual void av_packet_unref(AVPacket *pkt)=0;
   virtual enum AVPixelFormat avcodec_default_get_format(struct AVCodecContext *s, const enum AVPixelFormat *fmt)=0;
   virtual int avcodec_default_get_buffer2(AVCodecContext *s, AVFrame *pic, int flags)=0;
-  virtual void av_init_packet(AVPacket *pkt)=0;
 };
 
 // Use direct layer
@@ -103,7 +103,6 @@ public:
     return ::avcodec_close(avctx);
   }
   virtual AVFrame *av_frame_alloc() { return ::av_frame_alloc(); }
-
   virtual int avcodec_decode_audio4(AVCodecContext *avctx, AVFrame *frame, int *got_frame, AVPacket *pkt) {
     int ret;
     *got_frame = 0;
@@ -112,22 +111,19 @@ public:
       ret = avcodec_send_packet(avctx, pkt);
       // In particular, we don't expect AVERROR(EAGAIN), because we read all
       // decoded frames with avcodec_receive_frame() until done.
-      if (ret < 0 && ret != AVERROR_EOF) {
+      if (0 > ret && ret != AVERROR_EOF) {
         return ret;
       }
     }
 
     ret = avcodec_receive_frame(avctx, frame);
 
-    if (ret < 0 && ret != AVERROR(EAGAIN)) {
+    if (0 > ret && ret != AVERROR(EAGAIN)) {
       return ret;
-    }
-
-    if (ret >= 0) {
+    } else if (0 <= ret) {
       *got_frame = 1;
     }
-
-    return 0;
+    return ret;
   }
 
   virtual int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub, int *got_sub_ptr, AVPacket *avpkt) { return ::avcodec_decode_subtitle2(avctx, sub, got_sub_ptr, avpkt); }
@@ -143,11 +139,10 @@ public:
   }
   virtual void av_parser_close(AVCodecParserContext *s) { ::av_parser_close(s); }
 
+  virtual void av_init_packet(AVPacket *pkt) { ::av_init_packet(pkt); }
   virtual void av_packet_unref(AVPacket *pkt) { ::av_packet_unref(pkt); }
   virtual int avcodec_default_get_buffer2(AVCodecContext *s, AVFrame *pic, int flags) { return ::avcodec_default_get_buffer2(s, pic, flags); }
   virtual enum AVPixelFormat avcodec_default_get_format(struct AVCodecContext *s, const enum AVPixelFormat *fmt) { return ::avcodec_default_get_format(s, fmt); }
-
-  virtual void av_init_packet(AVPacket *pkt) { return ::av_init_packet(pkt); }
 
   // DLL faking.
   virtual bool ResolveExports() { return true; }

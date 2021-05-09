@@ -88,21 +88,19 @@ bool COMXAudioCodecOMX::Open(const COMXStreamInfo &hints, enum PCMLayout layout)
   m_pCodecContext->block_align = hints.blockalign;
   m_pCodecContext->bit_rate = hints.bitrate;
   m_pCodecContext->bits_per_coded_sample = hints.bitspersample;
-  if (hints.codec == AV_CODEC_ID_TRUEHD)
-  {
-    if (layout == PCM_LAYOUT_2_0)
-    {
+  if (hints.codec == AV_CODEC_ID_TRUEHD) {
+    if (layout == PCM_LAYOUT_2_0) {
       printf(" -> PCM LAYOUT 2.0\n");
       m_pCodecContext->request_channel_layout = AV_CH_LAYOUT_STEREO;
       m_pCodecContext->channels = 2;
       m_pCodecContext->channel_layout = m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels);
-    }
-    else if (layout <= PCM_LAYOUT_5_1)
-    {
+
+    } else if (layout <= PCM_LAYOUT_5_1) {
       printf(" -> PCM LAYOUT 5.1\n");
       m_pCodecContext->request_channel_layout = AV_CH_LAYOUT_5POINT1;
       m_pCodecContext->channels = 6;
       m_pCodecContext->channel_layout = m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels);
+
     } else {
       printf(" -> (SOMETHING ELSE)\n");
     }
@@ -160,36 +158,47 @@ void COMXAudioCodecOMX::Dispose()
   m_bGotFrame = false;
 }
 
-int COMXAudioCodecOMX::Decode(BYTE* pData, int iSize, double dts, double pts)
-{
+int COMXAudioCodecOMX::Decode(const BYTE * const pData, int const iSize, const double dts, const double pts) {
   int iBytesUsed, got_frame;
   if (!m_pCodecContext) return -1;
 
   AVPacket avpkt;
-  if (!m_iBufferOutputUsed)
-  {
+  if ( ! m_iBufferOutputUsed) {
     m_dts = dts;
     m_pts = pts;
   }
-  if (m_bGotFrame)
+  if (m_bGotFrame) {
     return 0;
+  }
 
   m_dllAvCodec.av_init_packet(&avpkt);
-  avpkt.data = pData;
+  avpkt.data = const_cast<BYTE *>(pData);
   avpkt.size = iSize;
   iBytesUsed = m_dllAvCodec.avcodec_decode_audio4(m_pCodecContext, m_pFrame1, &got_frame, &avpkt);
-  if (iBytesUsed < 0 || !got_frame) {
+  if (0 > iBytesUsed) {
     return iBytesUsed;
+  } else if ( ! got_frame) {
+    return -1;
   }
   m_bGotFrame = true;
 
-  if (m_bFirstFrame)
-  {
+  if (m_bFirstFrame) {
     CLog::Log(LOGDEBUG, "COMXAudioCodecOMX::Decode(%p,%d) format=%d(%d) chan=%d samples=%d size=%d data=%p,%p,%p,%p,%p,%p,%p,%p",
-             pData, iSize, m_pCodecContext->sample_fmt, m_desiredSampleFormat, m_pCodecContext->channels, m_pFrame1->nb_samples,
+             pData,
+             iSize,
+             m_pCodecContext->sample_fmt,
+             m_desiredSampleFormat,
+             m_pCodecContext->channels,
+             m_pFrame1->nb_samples,
              m_pFrame1->linesize[0],
-             m_pFrame1->data[0], m_pFrame1->data[1], m_pFrame1->data[2], m_pFrame1->data[3], m_pFrame1->data[4], m_pFrame1->data[5], m_pFrame1->data[6], m_pFrame1->data[7]
-             );
+             m_pFrame1->data[0],
+             m_pFrame1->data[1],
+             m_pFrame1->data[2],
+             m_pFrame1->data[3],
+             m_pFrame1->data[4],
+             m_pFrame1->data[5],
+             m_pFrame1->data[6],
+             m_pFrame1->data[7]);
   }
   return iSize;
 }

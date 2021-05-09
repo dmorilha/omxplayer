@@ -69,7 +69,7 @@ bool OMXPlayerSubtitles::Open(size_t stream_count,
 
   m_subtitle_buffers.resize(stream_count, circular_buffer<Subtitle>(32));
   m_external_subtitles = std::move(external_subtitles);
-  
+
   m_visible = true;
   m_use_external_subtitles = true;
   m_active_index = 0;
@@ -390,18 +390,13 @@ void OMXPlayerSubtitles::SetVisible(bool visible) BOOST_NOEXCEPT
 {
   assert(m_open);
 
-  if(visible)
-  {
-    if (!m_visible)
-    {
+  if(visible) {
+    if (!m_visible) {
       m_visible = true;
       FlushRenderer();
     }
-  }
-  else
-  {
-    if(m_visible)
-    {
+  } else {
+    if(m_visible) {
       m_visible = false;
       SendToRenderer(Message::Flush{});
     }
@@ -457,7 +452,7 @@ bool OMXPlayerSubtitles::AddPacket(OMXPacket *pkt, size_t stream_index) BOOST_NO
     OMXReader::FreePacket(pkt);
   };
 
-  if(pkt->hints.codec != AV_CODEC_ID_SUBRIP && 
+  if(pkt->hints.codec != AV_CODEC_ID_SUBRIP &&
      pkt->hints.codec != AV_CODEC_ID_SSA &&
      pkt->hints.codec != AV_CODEC_ID_ASS)
   {

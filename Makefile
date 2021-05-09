@@ -49,7 +49,7 @@ all: omxplayer.bin omxplayer.1
 
 %.o: %.cpp
 	@rm -f $@ 
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
+	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 omxplayer.o: help.h keys.h
 

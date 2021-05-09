@@ -161,18 +161,19 @@ bool OMXPlayerAudio::Close()
   return true;
 }
 
-
-bool OMXPlayerAudio::Decode(OMXPacket *pkt)
-{
-  if(!pkt)
+bool OMXPlayerAudio::Decode(const OMXPacket * const pkt) {
+  if ( ! pkt) {
     return false;
+  }
 
   /* last decoder reinit went wrong */
-  if(!m_decoder || !m_pAudioCodec)
+  if ( ! m_decoder || ! m_pAudioCodec) {
     return true;
+  }
 
-  if(!m_omx_reader->IsActive(OMXSTREAM_AUDIO, pkt->stream_index))
+  if ( ! m_omx_reader->IsActive(OMXSTREAM_AUDIO, pkt->stream_index)) {
     return true; 
+  }
 
   int channels = pkt->hints.channels;
 
@@ -180,23 +181,22 @@ bool OMXPlayerAudio::Decode(OMXPacket *pkt)
   unsigned int new_bitrate = pkt->hints.bitrate;
 
   /* only check bitrate changes on AV_CODEC_ID_DTS, AV_CODEC_ID_AC3, AV_CODEC_ID_EAC3 */
-  if(m_config.hints.codec != AV_CODEC_ID_DTS && m_config.hints.codec != AV_CODEC_ID_AC3 && m_config.hints.codec != AV_CODEC_ID_EAC3)
-  {
+  if (m_config.hints.codec != AV_CODEC_ID_DTS
+      && m_config.hints.codec != AV_CODEC_ID_AC3
+      && m_config.hints.codec != AV_CODEC_ID_EAC3) {
     new_bitrate = old_bitrate = 0;
   }
 
   // for passthrough we only care about the codec and the samplerate
-  bool minor_change = channels                 != m_config.hints.channels ||
-                      pkt->hints.bitspersample != m_config.hints.bitspersample ||
-                      old_bitrate              != new_bitrate;
+  bool minor_change = channels != m_config.hints.channels
+    || pkt->hints.bitspersample != m_config.hints.bitspersample
+    || old_bitrate != new_bitrate;
 
-  if(pkt->hints.codec          != m_config.hints.codec ||
-     pkt->hints.samplerate     != m_config.hints.samplerate ||
-     (!m_passthrough && minor_change))
-  {
+  if (pkt->hints.codec != m_config.hints.codec
+     || pkt->hints.samplerate != m_config.hints.samplerate
+     || ( ! m_passthrough && minor_change)) {
     printf("C : %d %d %d %d %d\n", m_config.hints.codec, m_config.hints.channels, m_config.hints.samplerate, m_config.hints.bitrate, m_config.hints.bitspersample);
     printf("N : %d %d %d %d %d\n", pkt->hints.codec, channels, pkt->hints.samplerate, pkt->hints.bitrate, pkt->hints.bitspersample);
-
 
     CloseDecoder();
     CloseAudioCodec();
@@ -204,68 +204,64 @@ bool OMXPlayerAudio::Decode(OMXPacket *pkt)
     m_config.hints = pkt->hints;
 
     m_player_error = OpenAudioCodec();
-    if(!m_player_error)
+    if ( ! m_player_error) {
       return false;
+    }
 
     m_player_error = OpenDecoder();
-    if(!m_player_error)
+    if( ! m_player_error) {
       return false;
+    }
   }
 
   CLog::Log(LOGINFO, "CDVDPlayerAudio::Decode dts:%.0f pts:%.0f size:%d", pkt->dts, pkt->pts, pkt->size);
 
-  if(pkt->pts != DVD_NOPTS_VALUE)
+  if (pkt->pts != DVD_NOPTS_VALUE) {
     m_iCurrentPts = pkt->pts;
-  else if(pkt->dts != DVD_NOPTS_VALUE)
+  } else if (pkt->dts != DVD_NOPTS_VALUE) {
     m_iCurrentPts = pkt->dts;
+  }
 
-  const uint8_t *data_dec = pkt->data;
-  int            data_len = pkt->size;
+  const uint8_t * data_dec = pkt->data;
+  int data_len = pkt->size;
 
-  if(!m_passthrough && !m_hw_decode)
-  {
-    double dts = pkt->dts, pts=pkt->pts;
-    while(data_len > 0)
-    {
-      int len = m_pAudioCodec->Decode((BYTE *)data_dec, data_len, dts, pts);
-      if( (len < 0) || (len >  data_len) )
-      {
+  if ( ! m_passthrough && ! m_hw_decode) {
+    double dts = pkt->dts, pts = pkt->pts;
+    while (data_len > 0) {
+      const int len = m_pAudioCodec->Decode((BYTE *)data_dec, data_len, dts, pts);
+      if ((len < 0) || (len >  data_len)) {
         m_pAudioCodec->Reset();
         break;
       }
 
-      data_dec+= len;
+      data_dec += len;
       data_len -= len;
 
-      uint8_t *decoded;
+      uint8_t * decoded;
       int decoded_size = m_pAudioCodec->GetData(&decoded, dts, pts);
 
-      if(decoded_size <=0)
+      if (decoded_size <=0) {
         continue;
-
-      while((int) m_decoder->GetSpace() < decoded_size)
-      {
-        OMXClock::OMXSleep(10);
-        if(m_flush_requested) return true;
       }
 
-      int ret = 0;
-
-      ret = m_decoder->AddPackets(decoded, decoded_size, dts, pts, m_pAudioCodec->GetFrameSize());
-      if(ret != decoded_size)
-      {
+      while((int) m_decoder->GetSpace() < decoded_size) {
+        OMXClock::OMXSleep(10);
+        if (m_flush_requested) {
+          return true;
+        }
+      }
+      const int ret = m_decoder->AddPackets(decoded, decoded_size, dts, pts, m_pAudioCodec->GetFrameSize());
+      if (ret != decoded_size) {
         printf("error ret %d decoded_size %d\n", ret, decoded_size);
       }
     }
-  }
-  else
-  {
-    while((int) m_decoder->GetSpace() < pkt->size)
-    {
+  } else {
+    while((int64_t)m_decoder->GetSpace() < pkt->size) {
       OMXClock::OMXSleep(10);
-      if(m_flush_requested) return true;
+      if (m_flush_requested) {
+        return true;
+      }
     }
-
     m_decoder->AddPackets(pkt->data, pkt->size, pkt->dts, pkt->pts, 0);
   }
 
@@ -309,7 +305,7 @@ void OMXPlayerAudio::Process()
       m_packets.pop_front();
     }
     UnLock();
-    
+
     LockDecoder();
     if(m_flush && omx_pkt)
     {

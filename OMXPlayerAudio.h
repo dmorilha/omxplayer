@@ -87,7 +87,7 @@ public:
   ~OMXPlayerAudio();
   bool Open(OMXClock *av_clock, const OMXAudioConfig &config, OMXReader *omx_reader);
   bool Close();
-  bool Decode(OMXPacket *pkt);
+  bool Decode(const OMXPacket * const pkt);
   void Process();
   void Flush();
   bool AddPacket(OMXPacket *pkt);

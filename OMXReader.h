@@ -159,7 +159,7 @@ public:
   int GetHeight() { return m_height; };
   OMXChapter GetChapter(unsigned int chapter) { return m_chapters[(chapter > MAX_OMX_CHAPTERS) ? MAX_OMX_CHAPTERS : chapter]; };
   static void FreePacket(OMXPacket *pkt);
-  static OMXPacket *AllocPacket(int size);
+  static OMXPacket * AllocPacket(const int64_t size);
   void SetSpeed(int iSpeed);
   void UpdateCurrentPTS();
   double ConvertTimestamp(int64_t pts, int den, int num);

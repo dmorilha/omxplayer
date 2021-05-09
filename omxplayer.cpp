@@ -1139,8 +1139,8 @@ int main(int argc, char *argv[])
       m_player_subtitles.SetUseExternalSubtitles(false);
     }
 
-    if(m_subtitle_index == -1 && !m_has_external_subtitles)
-      m_player_subtitles.SetVisible(false);
+    // if (m_subtitle_index == -1 && !m_has_external_subtitles)
+    //   m_player_subtitles.SetVisible(false);
   }
 
   m_omx_reader.GetHints(OMXSTREAM_AUDIO, m_config_audio.hints);
@@ -1355,22 +1355,16 @@ int main(int argc, char *argv[])
         }
         break;
       case KeyConfig::ACTION_NEXT_SUBTITLE:
-        if(m_has_subtitle)
-        {
-          if(m_player_subtitles.GetUseExternalSubtitles())
-          {
-            if(m_omx_reader.SubtitleStreamCount())
-            {
+        if(m_has_subtitle) {
+          if(m_player_subtitles.GetUseExternalSubtitles()) {
+            if(m_omx_reader.SubtitleStreamCount()) {
               assert(m_player_subtitles.GetActiveStream() == 0);
               DISPLAY_TEXT_SHORT("Subtitle stream: 1");
               m_player_subtitles.SetUseExternalSubtitles(false);
             }
-          }
-          else
-          {
-            auto new_index = m_player_subtitles.GetActiveStream()+1;
-            if(new_index < (size_t) m_omx_reader.SubtitleStreamCount())
-            {
+          } else {
+            auto new_index = m_player_subtitles.GetActiveStream() + 1;
+            if(new_index < (size_t) m_omx_reader.SubtitleStreamCount()) {
               DISPLAY_TEXT_SHORT(strprintf("Subtitle stream: %d", new_index+1));
               m_player_subtitles.SetActiveStream(new_index);
             }
@@ -1692,9 +1686,22 @@ int main(int argc, char *argv[])
         video_fifo_low = m_has_video && video_fifo < threshold;
         video_fifo_high = !m_has_video || (video_pts != DVD_NOPTS_VALUE && video_fifo > m_threshold);
       }
-      CLog::Log(LOGDEBUG, "Normal M:%.0f (A:%.0f V:%.0f) P:%d A:%.2f V:%.2f/T:%.2f (%d,%d,%d,%d) A:%d%% V:%d%% (%.2f,%.2f)\n", stamp, audio_pts, video_pts, m_av_clock->OMXIsPaused(), 
-        audio_pts == DVD_NOPTS_VALUE ? 0.0:audio_fifo, video_pts == DVD_NOPTS_VALUE ? 0.0:video_fifo, m_threshold, audio_fifo_low, video_fifo_low, audio_fifo_high, video_fifo_high,
-        m_player_audio.GetLevel(), m_player_video.GetLevel(), m_player_audio.GetDelay(), (float)m_player_audio.GetCacheTotal());
+      CLog::Log(LOGDEBUG, "Normal M:%.0f (A:%.0f V:%.0f) P:%d A:%.2f V:%.2f/T:%.2f (%d,%d,%d,%d) A:%d%% V:%d%% (%.2f,%.2f)\n",
+          stamp,
+          audio_pts,
+          video_pts,
+          m_av_clock->OMXIsPaused(), 
+          audio_pts == DVD_NOPTS_VALUE ? 0.0 : audio_fifo,
+          video_pts == DVD_NOPTS_VALUE ? 0.0 : video_fifo,
+          m_threshold,
+          audio_fifo_low,
+          video_fifo_low,
+          audio_fifo_high,
+          video_fifo_high,
+          m_player_audio.GetLevel(),
+          m_player_video.GetLevel(),
+          m_player_audio.GetDelay(),
+          (float)m_player_audio.GetCacheTotal());
 
       // keep latency under control by adjusting clock (and so resampling audio)
       if (m_config_audio.is_live)
